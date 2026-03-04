@@ -1,0 +1,237 @@
+//notes 
+Copyright (c) 2025 by Yardi Systems
+NAME
+	  File Name       		: rs_MiniMall_AutoPayReport.txt
+	  Dependent Template	: rx_MiniMall_AutoPayReport.xlsx
+	  Client Name       	: Avenue Living Communities Limited 
+	  Created         		: Case 17765604 - 1-Mar-2026 - Beril Pehlivan
+	  Description       	: Auto Pay Report
+	  Modification			: 
+//end notes 
+
+//select header
+
+SELECT
+  prop.hmy AS phmy,
+  prop.scode AS PropCode,
+'Run Date: ' + DATENAME(MONTH, CAST(getdate() AS DATETIME)) + ' ' +
+  CAST(DAY(CAST(getdate() AS DATETIME)) AS VARCHAR) + ', ' +
+  CAST(YEAR(CAST(getdate() AS DATETIME)) AS VARCHAR) 
+as ReportDate 
+FROM
+  CMPI_Payment p
+  LEFT JOIN crcd_payer cp WITH (NOLOCK) ON p.hcrcdpayer = cp.hmy
+  LEFT JOIN achdata ach ON ach.hmy = p.hachdata
+  INNER JOIN Tenant t ON t.hmyperson = p.hperson
+  INNER JOIN Property prop ON prop.hmy = t.hproperty
+  LEFT JOIN INTPROP ip ON prop.hmy = ip.HPROP
+  LEFT JOIN INTVATTRAN ivt ON ip.HTRANTYPE = ivt.HMY
+  LEFT JOIN Unit u ON u.hmy = t.hunit
+  OUTER APPLY (
+    SELECT TOP 1 ct.dtcreated
+    FROM crcdtrans ct
+    WHERE ct.hperson = t.hmyperson 
+    ORDER BY ct.dtcreated DESC
+  ) latestct
+WHERE 1=1 
+   #conditions#
+  AND ISNULL(p.dAmount, 0) = 0
+  AND t.istatus = 0
+  AND ISNULL(p.hChargeCode, 0) = 0
+  AND ISNULL(p.hCamrule, 0) = 0
+  AND ISNULL(p.hServiceInstance, 0) = 0
+  AND ISNULL(p.bInactive, 0) <> -1
+  AND CONVERT(date, ISNULL(p.dtStop, GETDATE())) >= CONVERT(date, GETDATE())
+  AND (
+        (ISNULL(p.hcrcdpayer, 0) <> 0 AND ISNULL(cp.sCCDigits, '') <> '')
+     OR (ISNULL(p.hachdata, 0) <> 0 AND ISNULL(ach.sAcct, '') <> '')
+  )
+ORDER BY
+  p.dtStart, p.dtStop;
+
+//end select 
+
+
+//select APDet
+
+SELECT
+  prop.hmy AS phmy,
+  prop.scode AS PropCode,
+  LTRIM(RTRIM(ISNULL(per.sfirstname, '') + N' ' + ISNULL(per.ulastname, '') + N' (' + RTRIM(per.ucode) + N')')) AS TenantName,
+  u.scode AS UnitCode,
+  CASE 
+    WHEN p.dtStop IS NULL OR CONVERT(date, p.dtStop) = '1900-01-01' THEN ''
+    ELSE CONVERT(varchar(10), p.dtStop, 101)
+  END AS StopDate,
+  CASE 
+    WHEN ISNULL(p.hcrcdpayer, 0) <> 0 THEN REPLICATE('*', 12) + RIGHT(cp.sCCDigits, 4)
+    WHEN ISNULL(p.hachdata, 0) <> 0 THEN N'XXXX-' + RIGHT(ach.sAcct, 4)
+  END AS Last4Digits,
+  t.saddr1 + ' ' + t.scity + ', ' + t.sstate + t.szipcode AS TenantAddress,
+  CASE 
+    WHEN ISNULL(p.hcrcdpayer, 0) <> 0 THEN N'CC'
+    WHEN ISNULL(p.hachdata, 0) <> 0 THEN N'ACH'
+    ELSE N''
+  END AS AutoPayType,
+  per.hmy AS PersonhMy,
+  latestct.dtcreated AS LastBilledDate,
+  CONVERT(varchar(10), DATEADD(month,1,latestct.dtcreated), 101) AS NextBillDate,
+  CASE WHEN ISNULL(p.bOnline, 0) = 0 THEN N'No' ELSE N'YES' END AS bOnline,
+  CASE WHEN ISNULL(p.hcrcdpayer, 0) <> 0 THEN CASE ISNULL(cp.bdebit, 0) WHEN -1 THEN N'DEBIT' ELSE N'CREDIT' END ELSE N'' END AS CardType
+FROM
+  CMPI_Payment p
+  LEFT JOIN crcd_payer cp WITH (NOLOCK) ON p.hcrcdpayer = cp.hmy
+  LEFT JOIN achdata ach ON ach.hmy = p.hachdata
+  LEFT JOIN person per ON per.hmy =
+    CASE 
+      WHEN ISNULL(p.hSeniorPayor, 0) > 0 THEN p.hSeniorPayor
+      WHEN ISNULL(p.hGuarantor, 0) > 0 THEN p.hGuarantor
+      WHEN ISNULL(p.hCustomer, 0) > 0 THEN p.hCustomer
+      WHEN ISNULL(p.hSecondaryTenant, 0) > 0 THEN p.hSecondaryTenant
+      ELSE
+        CASE 
+          WHEN ISNULL(p.hcrcdpayer, 0) <> 0 AND ISNULL(cp.hroommate, 0) > 0 THEN cp.hroommate
+          WHEN ISNULL(p.hachdata, 0) <> 0 AND ISNULL(ach.hroommate, 0) > 0 THEN ach.hroommate
+          ELSE p.hPerson
+        END
+    END
+  INNER JOIN Tenant t ON t.hmyperson = p.hperson
+  INNER JOIN Property prop ON prop.hmy = t.hproperty
+  LEFT JOIN INTPROP ip ON prop.hmy = ip.HPROP
+  LEFT JOIN INTVATTRAN ivt ON ip.HTRANTYPE = ivt.HMY
+  LEFT JOIN Unit u ON u.hmy = t.hunit
+  OUTER APPLY (
+    SELECT TOP 1 ct.dtcreated
+    FROM crcdtrans ct
+    WHERE ct.hperson = t.hmyperson 
+    ORDER BY ct.dtcreated DESC
+  ) latestct
+WHERE 1=1 
+  #conditions#
+  AND (Isnull('#Detail#','') = '' OR Isnull('#Detail#','') = 'Yes')
+  AND ISNULL(p.dAmount, 0) = 0
+  AND t.istatus = 0
+  AND ISNULL(p.hChargeCode, 0) = 0
+  AND ISNULL(p.hCamrule, 0) = 0
+  AND ISNULL(p.hServiceInstance, 0) = 0
+  AND ISNULL(p.bInactive, 0) <> -1
+  AND CONVERT(date, ISNULL(p.dtStop, GETDATE())) >= CONVERT(date, GETDATE())
+  AND (
+        (ISNULL(p.hcrcdpayer, 0) <> 0 AND ISNULL(cp.sCCDigits, '') <> '')
+     OR (ISNULL(p.hachdata, 0) <> 0 AND ISNULL(ach.sAcct, '') <> '')
+  )
+ORDER BY
+  p.dtStart, p.dtStop;
+//end select 
+
+
+
+//select APSum
+
+/* SUMMARY version - bottom of report totals */
+
+;WITH AutoPayBase AS (
+  SELECT
+    prop.hmy  AS phmy,
+    prop.scode AS PropCode,
+    prop.saddr1 + ' (' + prop.scode + ')' AS PropName,
+    t.hmyperson AS TenantHmy,
+    ISNULL(p.hcrcdpayer, 0) AS hcrcdpayer,
+    ISNULL(p.hachdata, 0)   AS hachdata,
+    p.dtStop,
+    p.dMaxAmount
+  FROM CMPI_Payment p
+  INNER JOIN Tenant t      ON t.hmyperson = p.hperson AND t.istatus = 0
+  INNER JOIN Property prop ON prop.hmy = t.hproperty
+  LEFT  JOIN crcd_payer cp WITH (NOLOCK) ON p.hcrcdpayer = cp.hmy
+  LEFT  JOIN achdata ach               ON ach.hmy = p.hachdata
+  WHERE 1=1 
+   #conditions#
+    AND (ISNULL('#Detail#','') = '' OR ISNULL('#Detail#','') = 'No' OR ISNULL('#Detail#','') = 'Yes')
+    AND ISNULL(p.dAmount, 0) = 0
+    AND ISNULL(p.hChargeCode, 0) = 0
+    AND ISNULL(p.hCamrule, 0) = 0
+    AND ISNULL(p.hServiceInstance, 0) = 0
+    AND ISNULL(p.bInactive, 0) <> -1
+    AND CONVERT(date, ISNULL(p.dtStop, GETDATE())) >= CONVERT(date, GETDATE())
+    AND (
+          (ISNULL(p.hcrcdpayer, 0) <> 0 AND ISNULL(cp.sCCDigits, '') <> '')
+       OR (ISNULL(p.hachdata, 0) <> 0 AND ISNULL(ach.sAcct, '') <> '')
+    )
+),
+ActiveTenants AS (
+  /* denominator for Percent of Property on autopay */
+  SELECT
+    prop.hmy AS phmy,
+    COUNT(DISTINCT t.hmyperson) AS ActiveTenantCount
+  FROM Property prop
+  INNER JOIN Tenant t ON t.hproperty = prop.hmy AND t.istatus = 0
+  WHERE 1=1 #conditions#
+  GROUP BY prop.hmy
+),
+LatestBilled AS (
+  /* one row per tenant with last billed amount/date, CC from crcdtrans, ACH from cmpi_payments */
+  SELECT
+    b.phmy,
+    b.TenantHmy,
+
+    /* last billed date */
+    CASE
+      WHEN b.hcrcdpayer <> 0 THEN cc.LastCCDate
+      WHEN b.hachdata  <> 0 THEN ach.LastACHDate
+      ELSE NULL
+    END AS LastBilledDate,
+
+    /* last billed amount */
+    CASE
+      WHEN b.hcrcdpayer <> 0 THEN cc.LastCCAmount
+      WHEN b.hachdata  <> 0 THEN ach.LastACHAmount
+      ELSE 0
+    END AS LastBilledAmount
+  FROM AutoPayBase b
+  OUTER APPLY (
+    SELECT TOP 1
+      ct.dtcreated AS LastCCDate,
+      ct.damount   AS LastCCAmount
+    FROM crcdtrans ct
+    WHERE ct.hperson = b.TenantHmy
+    ORDER BY ct.dtcreated DESC
+  ) cc
+  OUTER APPLY (
+    SELECT TOP 1
+      ap.dtcreated AS LastACHDate,
+      ap.damount   AS LastACHAmount
+    FROM cmpi_payment ap
+    WHERE ap.hperson  = b.TenantHmy
+      AND ap.hachdata = b.hachdata
+      AND ISNULL(ap.damount,0) <> 0
+    ORDER BY ap.dtcreated DESC
+  ) ach
+)
+SELECT b.PropCode, b.PropName,
+  COUNT(*) AS TotalOnAutoPay,
+  CAST(
+    100.0 * COUNT(DISTINCT b.TenantHmy) / NULLIF(atn.ActiveTenantCount, 0)
+    AS decimal(10,2)
+  ) AS PerPropAutoPay,
+  SUM(
+    CASE
+      WHEN b.dtStop IS NOT NULL
+       AND CONVERT(date, b.dtStop) <> '1900-01-01'
+       AND CONVERT(date, b.dtStop) <= DATEADD(day, 28, CONVERT(date, GETDATE()))
+      THEN 1 ELSE 0
+    END
+  ) AS TotExp28Days,
+  SUM(CASE WHEN b.hcrcdpayer <> 0 THEN 1 ELSE 0 END) AS NumCCAutoPay,
+  SUM(CASE WHEN b.hachdata <> 0 THEN 1 ELSE 0 END) AS NumACHAutoPay,
+  SUM(ISNULL(lb.LastBilledAmount, 0)) AS TotBilled,
+  SUM(ISNULL(b.dMaxAmount, 0)) AS TotPendingChg,
+  b.phmy
+FROM AutoPayBase b
+LEFT JOIN ActiveTenants atn ON atn.phmy = b.phmy
+LEFT JOIN LatestBilled lb ON lb.phmy = b.phmy AND lb.TenantHmy = b.TenantHmy
+GROUP BY b.PropCode, b.PropName, b.phmy, atn.ActiveTenantCount
+ORDER BY  b.PropCode;
+
+
+//end select
