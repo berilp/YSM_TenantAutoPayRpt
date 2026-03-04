@@ -7,7 +7,7 @@
 		Loads the Correspondence Custom Report Setup.
 		Report : ...Mini Mall Storage Auto Pay Report (MM_AutoPay) 
 	PACKAGE CREATED ON
-		Date & Time : 3/3/2026 10:18:28 PM
+		Date & Time : 3/3/2026 10:52:19 PM
 	VERSION
 		CorrespondencePIv07.13
 	REPORT NOTES
@@ -22,9 +22,7 @@ EXEC YSR_DeleteReportSetup 'MM_AutoPay', 1
 
 /* Insert or Update YSR Report Setup */ 
 UPDATE CustomCorrespMerging 
-SET sCode='MM_AutoPay',sName='...Mini Mall Storage Auto Pay Report',sScriptFileName='',sSELECT='SELECT distinct
-  prop.hmy AS phmy,
-  prop.scode AS PropCode
+SET sCode='MM_AutoPay',sName='...Mini Mall Storage Auto Pay Report',sScriptFileName='',sSELECT='SELECT distinct '''' keycol
 FROM
   CMPI_Payment p
   LEFT JOIN crcd_payer cp WITH (NOLOCK) ON p.hcrcdpayer = cp.hmy
@@ -51,9 +49,7 @@ WHERE 1=1 #conditions#
   AND (
         (ISNULL(p.hcrcdpayer, 0) <> 0 AND ISNULL(cp.sCCDigits, '''') <> '''')
      OR (ISNULL(p.hachdata, 0) <> 0 AND ISNULL(ach.sAcct, '''') <> '''')
-  )
-ORDER BY
-  prop.hmy',sKeyCols='phmy',bInactive=0,bNewScreenOutput =0,bTabbedOutput =0,bTitleUsingFreezePanes =0,iObjectType=0,
+  )',sKeyCols='keycol',bInactive=0,bNewScreenOutput =0,bTabbedOutput =0,bTitleUsingFreezePanes =0,iObjectType=0,
      sHRecord='',
      hAttachment=(SELECT hmy FROM AttachmentType WHERE UPPER(sDesc) =UPPER('') AND iObjectType =0),
      hEmailTemplate=(SELECT hmy FROM Email_Template WHERE UPPER(sName) =UPPER('') AND iType =0),
@@ -82,9 +78,7 @@ ORDER BY
 WHERE UPPER(sCode)=UPPER('MM_AutoPay')
 ;
 INSERT INTO CustomCorrespMerging(sCode,sName,sScriptFileName,sSELECT,sKeyCols,bInactive,bNewScreenOutput,bTabbedOutput,bTitleUsingFreezePanes,iObjectType,sHRecord,hAttachment,hEmailTemplate,hEmailToRole,sMergedFileEmailTo,sEmailType,sNotes,bIncludeAllContacts,bMergeReportsWithNoEmailId,bAttachReportChecked,bEmailReportChecked,bShowOnPortalChecked,sReportOutputPath,bSchedulerRpt,bLongRunRpt,iDgSignObjectType,sDgSignHRecord,bHideFromGenerateDropDown,sQRColumns,iReportType,iWizardStep,bWizardCompleted,bAlwaysPreview,sHelpTopic,sAttachDescCol)
-SELECT 'MM_AutoPay','...Mini Mall Storage Auto Pay Report','','SELECT distinct
-  prop.hmy AS phmy,
-  prop.scode AS PropCode
+SELECT 'MM_AutoPay','...Mini Mall Storage Auto Pay Report','','SELECT distinct '''' keycol
 FROM
   CMPI_Payment p
   LEFT JOIN crcd_payer cp WITH (NOLOCK) ON p.hcrcdpayer = cp.hmy
@@ -111,9 +105,7 @@ WHERE 1=1 #conditions#
   AND (
         (ISNULL(p.hcrcdpayer, 0) <> 0 AND ISNULL(cp.sCCDigits, '''') <> '''')
      OR (ISNULL(p.hachdata, 0) <> 0 AND ISNULL(ach.sAcct, '''') <> '''')
-  )
-ORDER BY
-  prop.hmy','phmy',0,0,0,0,0,''
+  )','keycol',0,0,0,0,0,''
       ,(SELECT hmy FROM AttachmentType WHERE UPPER(sDesc) =UPPER('') AND iObjectType =0)
       ,(SELECT hmy FROM Email_Template WHERE UPPER(sName) =UPPER('') AND iType =0)
       ,(SELECT hmy FROM Role WHERE UPPER(sDesc) =UPPER('') AND iObjectType =0)
@@ -208,7 +200,7 @@ WHERE NOT EXISTS(SELECT 1
 /* Insert or UPDATE Report Sections for rpt */ 
 UPDATE CustomCorrespSections 
 SET hCustomCorrespSetup =(SELECT hmy FROM CustomCorrespSetup WHERE UPPER(Scode) = UPPER('rpt') AND hCustomCorrespMerging=(SELECT Hmy FROM CustomCorrespMerging WHERE UPPER(Scode)=UPPER('MM_AutoPay'))),bMultiRow=0,bPrimary=1,
-    hCustomCorrespStANDardList=(SELECT hmy FROM CustomCorrespStANDardList WHERE UPPER(sName) =UPPER('')),bInactive=0,sCode='header',sName='Header',sDataSource='header',sKeyCols='phmy',sGroupingCols='',sSummaryCols='',sOrderbyCols='',sSubTotalCols=''
+    hCustomCorrespStANDardList=(SELECT hmy FROM CustomCorrespStANDardList WHERE UPPER(sName) =UPPER('')),bInactive=0,sCode='header',sName='Header',sDataSource='header',sKeyCols='keycol',sGroupingCols='',sSummaryCols='',sOrderbyCols='',sSubTotalCols=''
 WHERE hMy=(SELECT ISNULL(Max(crsc1.hMy),0) 
  FROM CustomCorrespSetup crst1 
  INNER JOIN CustomCorrespSections crsc1 ON crsc1.hCustomCorrespSetup=crst1.HMY 
@@ -217,7 +209,7 @@ WHERE hMy=(SELECT ISNULL(Max(crsc1.hMy),0)
  AND crst1.hCustomCorrespMerging=(SELECT Hmy FROM CustomCorrespMerging WHERE UPPER(Scode)=UPPER('MM_AutoPay'))) 
 ;
 INSERT INTO CustomCorrespSections(hCustomCorrespSetup,bMultiRow,bPrimary,bInactive,sCode,sName,sDataSource,sKeyCols,sGroupingCols,sSummaryCols,sSubTotalCols,hCustomCorrespStANDardList,sOrderbyCols)
-SELECT (SELECT hmy FROM CustomCorrespSetup WHERE UPPER(Scode) = UPPER('rpt') AND hCustomCorrespMerging=(SELECT Hmy FROM CustomCorrespMerging WHERE UPPER(Scode)=UPPER('MM_AutoPay'))),0,1,0,'header','Header','header','phmy','','','',
+SELECT (SELECT hmy FROM CustomCorrespSetup WHERE UPPER(Scode) = UPPER('rpt') AND hCustomCorrespMerging=(SELECT Hmy FROM CustomCorrespMerging WHERE UPPER(Scode)=UPPER('MM_AutoPay'))),0,1,0,'header','Header','header','keycol','','','',
      (SELECT hmy FROM CustomCorrespStANDardList WHERE UPPER(sName) =UPPER('')),''
 WHERE NOT EXISTS( 
          SELECT 1 
@@ -228,7 +220,7 @@ WHERE NOT EXISTS(
 ;
 UPDATE CustomCorrespSections 
 SET hCustomCorrespSetup =(SELECT hmy FROM CustomCorrespSetup WHERE UPPER(Scode) = UPPER('rpt') AND hCustomCorrespMerging=(SELECT Hmy FROM CustomCorrespMerging WHERE UPPER(Scode)=UPPER('MM_AutoPay'))),bMultiRow=1,bPrimary=0,
-    hCustomCorrespStANDardList=(SELECT hmy FROM CustomCorrespStANDardList WHERE UPPER(sName) =UPPER('')),bInactive=0,sCode='APDet',sName='APDet',sDataSource='APDet',sKeyCols='phmy',sGroupingCols='',sSummaryCols='',sOrderbyCols='',sSubTotalCols=''
+    hCustomCorrespStANDardList=(SELECT hmy FROM CustomCorrespStANDardList WHERE UPPER(sName) =UPPER('')),bInactive=0,sCode='APDet',sName='APDet',sDataSource='APDet',sKeyCols='keycol',sGroupingCols='',sSummaryCols='',sOrderbyCols='',sSubTotalCols=''
 WHERE hMy=(SELECT ISNULL(Max(crsc1.hMy),0) 
  FROM CustomCorrespSetup crst1 
  INNER JOIN CustomCorrespSections crsc1 ON crsc1.hCustomCorrespSetup=crst1.HMY 
@@ -237,7 +229,7 @@ WHERE hMy=(SELECT ISNULL(Max(crsc1.hMy),0)
  AND crst1.hCustomCorrespMerging=(SELECT Hmy FROM CustomCorrespMerging WHERE UPPER(Scode)=UPPER('MM_AutoPay'))) 
 ;
 INSERT INTO CustomCorrespSections(hCustomCorrespSetup,bMultiRow,bPrimary,bInactive,sCode,sName,sDataSource,sKeyCols,sGroupingCols,sSummaryCols,sSubTotalCols,hCustomCorrespStANDardList,sOrderbyCols)
-SELECT (SELECT hmy FROM CustomCorrespSetup WHERE UPPER(Scode) = UPPER('rpt') AND hCustomCorrespMerging=(SELECT Hmy FROM CustomCorrespMerging WHERE UPPER(Scode)=UPPER('MM_AutoPay'))),1,0,0,'APDet','APDet','APDet','phmy','','','',
+SELECT (SELECT hmy FROM CustomCorrespSetup WHERE UPPER(Scode) = UPPER('rpt') AND hCustomCorrespMerging=(SELECT Hmy FROM CustomCorrespMerging WHERE UPPER(Scode)=UPPER('MM_AutoPay'))),1,0,0,'APDet','APDet','APDet','keycol','','','',
      (SELECT hmy FROM CustomCorrespStANDardList WHERE UPPER(sName) =UPPER('')),''
 WHERE NOT EXISTS( 
          SELECT 1 
@@ -248,7 +240,7 @@ WHERE NOT EXISTS(
 ;
 UPDATE CustomCorrespSections 
 SET hCustomCorrespSetup =(SELECT hmy FROM CustomCorrespSetup WHERE UPPER(Scode) = UPPER('rpt') AND hCustomCorrespMerging=(SELECT Hmy FROM CustomCorrespMerging WHERE UPPER(Scode)=UPPER('MM_AutoPay'))),bMultiRow=1,bPrimary=0,
-    hCustomCorrespStANDardList=(SELECT hmy FROM CustomCorrespStANDardList WHERE UPPER(sName) =UPPER('')),bInactive=0,sCode='APSum',sName='APSum',sDataSource='APSum',sKeyCols='phmy',sGroupingCols='',sSummaryCols='',sOrderbyCols='',sSubTotalCols=''
+    hCustomCorrespStANDardList=(SELECT hmy FROM CustomCorrespStANDardList WHERE UPPER(sName) =UPPER('')),bInactive=0,sCode='APSum',sName='APSum',sDataSource='APSum',sKeyCols='keycol',sGroupingCols='',sSummaryCols='',sOrderbyCols='',sSubTotalCols=''
 WHERE hMy=(SELECT ISNULL(Max(crsc1.hMy),0) 
  FROM CustomCorrespSetup crst1 
  INNER JOIN CustomCorrespSections crsc1 ON crsc1.hCustomCorrespSetup=crst1.HMY 
@@ -257,7 +249,7 @@ WHERE hMy=(SELECT ISNULL(Max(crsc1.hMy),0)
  AND crst1.hCustomCorrespMerging=(SELECT Hmy FROM CustomCorrespMerging WHERE UPPER(Scode)=UPPER('MM_AutoPay'))) 
 ;
 INSERT INTO CustomCorrespSections(hCustomCorrespSetup,bMultiRow,bPrimary,bInactive,sCode,sName,sDataSource,sKeyCols,sGroupingCols,sSummaryCols,sSubTotalCols,hCustomCorrespStANDardList,sOrderbyCols)
-SELECT (SELECT hmy FROM CustomCorrespSetup WHERE UPPER(Scode) = UPPER('rpt') AND hCustomCorrespMerging=(SELECT Hmy FROM CustomCorrespMerging WHERE UPPER(Scode)=UPPER('MM_AutoPay'))),1,0,0,'APSum','APSum','APSum','phmy','','','',
+SELECT (SELECT hmy FROM CustomCorrespSetup WHERE UPPER(Scode) = UPPER('rpt') AND hCustomCorrespMerging=(SELECT Hmy FROM CustomCorrespMerging WHERE UPPER(Scode)=UPPER('MM_AutoPay'))),1,0,0,'APSum','APSum','APSum','keycol','','','',
      (SELECT hmy FROM CustomCorrespStANDardList WHERE UPPER(sName) =UPPER('')),''
 WHERE NOT EXISTS( 
          SELECT 1 

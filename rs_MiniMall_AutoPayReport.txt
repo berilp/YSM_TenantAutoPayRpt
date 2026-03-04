@@ -11,7 +11,7 @@ NAME
 
 //select header
 
-SELECT
+SELECT '' keycol,
   prop.hmy AS phmy,
   prop.scode AS PropCode,
 'Run Date: ' + DATENAME(MONTH, CAST(getdate() AS DATETIME)) + ' ' +
@@ -54,7 +54,7 @@ ORDER BY
 
 //select APDet
 
-SELECT
+SELECT '' keycol,
   prop.hmy AS phmy,
   prop.scode AS PropCode,
   LTRIM(RTRIM(ISNULL(per.sfirstname, '') + N' ' + ISNULL(per.ulastname, '') + N' (' + RTRIM(per.ucode) + N')')) AS TenantName,
@@ -131,7 +131,7 @@ ORDER BY
 /* SUMMARY version - bottom of report totals */
 
 ;WITH AutoPayBase AS (
-  SELECT
+  SELECT '' keycol,
     prop.hmy  AS phmy,
     prop.scode AS PropCode,
     prop.saddr1 + ' (' + prop.scode + ')' AS PropName,
@@ -208,7 +208,7 @@ LatestBilled AS (
     ORDER BY ap.dtcreated DESC
   ) ach
 )
-SELECT b.PropCode, b.PropName,
+SELECT '' keycol, b.PropCode, b.PropName,
   COUNT(*) AS TotalOnAutoPay,
   CAST(
     100.0 * COUNT(DISTINCT b.TenantHmy) / NULLIF(atn.ActiveTenantCount, 0)
